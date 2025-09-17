@@ -1,0 +1,33 @@
+name = "eleven-interior-api"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Production Environment Variables
+[vars]
+ENVIRONMENT = "production"
+CLOUDINARY_CLOUD_NAME = "dqxs8jdo3"
+CLOUDINARY_API_KEY = "823999943753343"
+CLOUDINARY_FOLDER = "eleven-interior"
+CLOUDINARY_BASE_URL = "https://api.cloudinary.com/v1_1/dqxs8jdo3"
+CLOUDINARY_SECURE_DELIVERY = "true"
+CLOUDINARY_AUTO_OPTIMIZE = "true"
+CLOUDINARY_API_SECRET="Fib2sTkCAcBw0BERQqydDyfu6FE"
+CLOUDINARY_FETCH_FORMAT = "auto"
+CLOUDINARY_QUALITY = "auto:good"
+CLOUDINARY_URL = "cloudinary://823999943753343:Fib2sTkCAcBw0BERQqydDyfu6FE@dqxs8jdo3"
+JWT_SECRET = "prod-jwt-secret-key-for-eleven-interior-api-2024-secure-min-32-chars"
+ADMIN_API_KEY = "eleven-interior-admin-api-key-2024-secure"
+
+# Production Configuration
+# Custom domain routes (uncomment when domain is configured)
+# routes = [
+#   { pattern = "api.eleveninterior.com/*", zone_name = "eleveninterior.com" }
+# ]
+
+# Production D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "eleven-interior-db"
+database_id = "d30aec24-7cf2-4b0d-8b31-49c82e29be2f"
+migrations_dir = "migrations"
+

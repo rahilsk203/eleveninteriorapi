@@ -1,0 +1,32 @@
+{
+  "name": "eleven-interior-api",
+  "version": "1.0.0",
+  "description": "High-performance Cloudflare Worker API for Eleven Interior with DSA optimizations",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest",
+    "db:migrate": "wrangler d1 migrations apply eleven-interior-db",
+    "db:studio": "wrangler d1 studio eleven-interior-db"
+  },
+  "keywords": [
+    "cloudflare-worker",
+    "api",
+    "interior-design",
+    "cloudinary",
+    "d1-database"
+  ],
+  "author": "Eleven Interior",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0",
+    "wrangler": "^3.22.1",
+    "vitest": "^1.1.0"
+  },
+  "dependencies": {
+    "cloudinary": "^1.41.3",
+    "itty-router": "^4.0.23",
+    "zod": "^3.22.4"
+  }
+}
