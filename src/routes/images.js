@@ -173,10 +173,11 @@ class ImageRoutes {
       const db = new DatabaseService(request.env.DB);
 
       // Upload to Cloudinary with optimized settings
+      const publicId = `${validatedData.section}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const uploadResult = await cloudinary.uploadFile(imageFile, {
         resourceType: 'image',
         folder: `eleven-interior/images/${validatedData.section}`,
-        publicId: `${validatedData.section}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        publicId: publicId
       });
 
       // Save metadata to database
@@ -281,10 +282,11 @@ class ImageRoutes {
           }
 
           // Upload to Cloudinary
+          const publicId = `${section}_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`;
           const uploadResult = await cloudinary.uploadFile(imageData.file, {
             resourceType: 'image',
             folder: `eleven-interior/images/${section}`,
-            publicId: `${section}_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`
+            publicId: publicId
           });
 
           // Save metadata to database

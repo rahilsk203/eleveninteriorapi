@@ -19,8 +19,8 @@ class CloudinaryService {
 
   // Generate secure signature for authenticated requests
   async generateSignature(params, secret) {
-    // CRITICAL: Only accept timestamp and folder parameters for signature
-    const allowedParams = ['timestamp', 'folder'];
+    // CRITICAL: Parameters that should be included in signature calculation
+    const allowedParams = ['timestamp', 'folder', 'public_id', 'resource_type', 'public_ids'];
     const paramsToSign = {};
     
     allowedParams.forEach(key => {
@@ -55,17 +55,22 @@ class CloudinaryService {
       // Use timestamp for unique identification
       const timestamp = Math.floor(Date.now() / 1000);
       
-      // CRITICAL: Only these parameters go into signature calculation
+      // CRITICAL: Parameters that go into signature calculation
       const signatureParams = {
         timestamp: timestamp
       };
 
-      // Only add folder to signature if specified
+      // Add folder to signature if specified
       if (options.folder) {
         signatureParams.folder = options.folder;
       }
 
-      // Generate signature with ONLY the signature parameters
+      // Add public_id to signature if specified
+      if (options.publicId) {
+        signatureParams.public_id = options.publicId;
+      }
+
+      // Generate signature with all signature parameters
       const signature = await this.generateSignature(signatureParams, this.apiSecret);
       
       // Add file first
@@ -120,10 +125,10 @@ class CloudinaryService {
   // Delete file from Cloudinary
   async deleteFile(publicId, resourceType = 'image') {
     try {
+      const timestamp = Math.floor(Date.now() / 1000);
       const params = {
         public_id: publicId,
-        resource_type: resourceType,
-        timestamp: Math.floor(Date.now() / 1000)
+        timestamp: timestamp
       };
 
       const signature = await this.generateSignature(params, this.apiSecret);
@@ -132,7 +137,7 @@ class CloudinaryService {
       formData.append('public_id', publicId);
       formData.append('signature', signature);
       formData.append('api_key', this.apiKey);
-      formData.append('timestamp', params.timestamp);
+      formData.append('timestamp', timestamp);
 
       const response = await fetch(`${this.baseUrl}/${resourceType}/destroy`, {
         method: 'POST',
@@ -231,19 +236,19 @@ class CloudinaryService {
   // Batch operations for multiple files (optimized for bulk operations)
   async batchDelete(publicIds, resourceType = 'image') {
     try {
+      const timestamp = Math.floor(Date.now() / 1000);
       const params = {
         public_ids: publicIds.join(','),
-        resource_type: resourceType,
-        timestamp: Math.floor(Date.now() / 1000)
+        timestamp: timestamp
       };
 
       const signature = await this.generateSignature(params, this.apiSecret);
       
       const formData = new FormData();
-      formData.append('public_ids', params.public_ids);
+      formData.append('public_ids', publicIds.join(','));
       formData.append('signature', signature);
       formData.append('api_key', this.apiKey);
-      formData.append('timestamp', params.timestamp);
+      formData.append('timestamp', timestamp);
 
       const response = await fetch(`${this.baseUrl}/${resourceType}/delete_resources`, {
         method: 'POST',
