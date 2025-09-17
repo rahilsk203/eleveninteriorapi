@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gallery Image Upload Test - Eleven Interior API</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .form-section h3 {
+            color: #34495e;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+        .button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .gallery-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .gallery-info {
+            padding: 15px;
+        }
+        .gallery-info h4 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .gallery-info p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .metadata {
+            background-color: #f8f9fa;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 Gallery Image Upload Test - Eleven Interior</h1>
+        
+        <!-- Single Gallery Image Upload -->
+        <div class="form-section">
+            <h3>📷 Single Gallery Image Upload</h3>
+            <form id="singleImageForm">
+                <div class="form-group">
+                    <label for="singleImage">Select Image:</label>
+                    <input type="file" id="singleImage" accept="image/*" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="singleTitle">Title:</label>
+                    <input type="text" id="singleTitle" placeholder="e.g., Luxury Master Bedroom" value="Luxury Master Bedroom">
+                </div>
+                
+                <div class="form-group">
+                    <label for="singleDescription">Description:</label>
+                    <textarea id="singleDescription" placeholder="Detailed description of the image">Elegant master bedroom suite with premium finishes, custom lighting, and spa-like ambiance</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="singleCategory">Category:</label>
+                    <select id="singleCategory">
+                        <option value="">Select Category</option>
+                        <option value="Residential" selected>Residential</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Office">Office</option>
+                        <option value="Hospitality">Hospitality</option>
+                        <option value="Retail">Retail</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Educational">Educational</option>
+                        <option value="Mixed-Use">Mixed-Use</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="singleAltText">Alt Text (for accessibility):</label>
+                    <input type="text" id="singleAltText" placeholder="Descriptive text for screen readers" value="Luxurious master bedroom with modern interior design">
+                </div>
+                
+                <div class="form-group">
+                    <label for="singleSortOrder">Sort Order:</label>
+                    <input type="number" id="singleSortOrder" value="0" min="0">
+                </div>
+                
+                <button type="submit" class="button">Upload Single Image</button>
+            </form>
+        </div>
+
+        <!-- Batch Gallery Image Upload -->
+        <div class="form-section">
+            <h3>📷 Batch Gallery Images Upload (Max 5 images)</h3>
+            <form id="batchImageForm">
+                <div id="batchImagesContainer">
+                    <!-- Dynamic image upload fields will be added here -->
+                </div>
+                
+                <button type="button" class="button" onclick="addImageField()" style="margin-right: 10px;">+ Add Image</button>
+                <button type="submit" class="button">Upload Batch Images</button>
+            </form>
+        </div>
+
+        <!-- Get Gallery Images -->
+        <div class="form-section">
+            <h3>📋 Get Gallery Images</h3>
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+                <button class="button" onclick="getGalleryImages()">Get All Gallery Images</button>
+                <label>
+                    <input type="number" id="limitImages" placeholder="Limit" style="width: 100px;" min="1">
+                    Limit
+                </label>
+                <label>
+                    <input type="number" id="offsetImages" placeholder="Offset" style="width: 100px;" min="0" value="0">
+                    Offset
+                </label>
+                <label>
+                    <input type="checkbox" id="includeInactive"> Include Inactive
+                </label>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="result"></div>
+
+        <!-- Gallery Display -->
+        <div id="galleryDisplay" class="gallery-grid"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://eleven-interior-api.aichatapi.workers.dev'; // Update this to your API base URL
+        let imageFieldCount = 0;
+
+        // Add image field for batch upload
+        function addImageField() {
+            if (imageFieldCount >= 5) {
+                alert('Maximum 5 images allowed per batch upload');
+                return;
+            }
+            
+            imageFieldCount++;
+            const container = document.getElementById('batchImagesContainer');
+            const imageField = document.createElement('div');
+            imageField.className = 'form-group';
+            imageField.style.border = '1px solid #e0e0e0';
+            imageField.style.padding = '15px';
+            imageField.style.marginBottom = '15px';
+            imageField.style.borderRadius = '5px';
+            
+            imageField.innerHTML = `
+                <h4>Image ${imageFieldCount}</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label>Image File:</label>
+                        <input type="file" name="image_${imageFieldCount}" accept="image/*" required>
+                    </div>
+                    <div>
+                        <label>Title:</label>
+                        <input type="text" name="title_${imageFieldCount}" placeholder="Image title">
+                    </div>
+                    <div>
+                        <label>Description:</label>
+                        <textarea name="description_${imageFieldCount}" placeholder="Image description" style="height: 60px;"></textarea>
+                    </div>
+                    <div>
+                        <label>Category:</label>
+                        <select name="category_${imageFieldCount}">
+                            <option value="">Select Category</option>
+                            <option value="Residential">Residential</option>
+                            <option value="Commercial">Commercial</option>
+                            <option value="Office">Office</option>
+                            <option value="Hospitality">Hospitality</option>
+                            <option value="Retail">Retail</option>
+                            <option value="Healthcare">Healthcare</option>
+                            <option value="Educational">Educational</option>
+                            <option value="Mixed-Use">Mixed-Use</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Alt Text:</label>
+                        <input type="text" name="alt_text_${imageFieldCount}" placeholder="Alt text for accessibility">
+                    </div>
+                    <div>
+                        <label>Sort Order:</label>
+                        <input type="number" name="sort_order_${imageFieldCount}" value="${imageFieldCount}" min="0">
+                    </div>
+                </div>
+                <button type="button" onclick="removeImageField(this)" style="margin-top: 10px; background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Remove</button>
+            `;
+            
+            container.appendChild(imageField);
+        }
+
+        // Remove image field
+        function removeImageField(button) {
+            button.parentElement.remove();
+            imageFieldCount--;
+            
+            // Renumber remaining fields
+            const fields = document.querySelectorAll('#batchImagesContainer > div');
+            fields.forEach((field, index) => {
+                const newIndex = index + 1;
+                field.querySelector('h4').textContent = `Image ${newIndex}`;
+                
+                const inputs = field.querySelectorAll('input, textarea, select');
+                inputs.forEach(input => {
+                    const name = input.getAttribute('name');
+                    if (name) {
+                        input.setAttribute('name', name.replace(/_\d+$/, `_${newIndex}`));
+                    }
+                });
+            });
+            
+            imageFieldCount = fields.length;
+        }
+
+        // Single image upload
+        document.getElementById('singleImageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const imageFile = document.getElementById('singleImage').files[0];
+            
+            if (!imageFile) {
+                showResult('Please select an image file', false);
+                return;
+            }
+            
+            formData.append('image', imageFile);
+            formData.append('section', 'gallery');
+            formData.append('title', document.getElementById('singleTitle').value);
+            formData.append('description', document.getElementById('singleDescription').value);
+            formData.append('category', document.getElementById('singleCategory').value);
+            formData.append('alt_text', document.getElementById('singleAltText').value);
+            formData.append('sort_order', document.getElementById('singleSortOrder').value);
+            
+            try {
+                showResult('Uploading image...', true);
+                const response = await fetch(`${API_BASE}/api/images/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                showResult(JSON.stringify(result, null, 2), response.ok);
+                
+                if (response.ok) {
+                    // Refresh gallery display
+                    setTimeout(() => getGalleryImages(), 1000);
+                }
+            } catch (error) {
+                showResult(`Error: ${error.message}`, false);
+            }
+        });
+
+        // Batch image upload
+        document.getElementById('batchImageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (imageFieldCount === 0) {
+                showResult('Please add at least one image', false);
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('section', 'gallery');
+            
+            // Add all image files and their metadata
+            for (let i = 1; i <= imageFieldCount; i++) {
+                const imageFile = document.querySelector(`input[name="image_${i}"]`).files[0];
+                if (imageFile) {
+                    formData.append(`image_${i}`, imageFile);
+                    formData.append(`title_${i}`, document.querySelector(`input[name="title_${i}"]`).value);
+                    formData.append(`description_${i}`, document.querySelector(`textarea[name="description_${i}"]`).value);
+                    formData.append(`category_${i}`, document.querySelector(`select[name="category_${i}"]`).value);
+                    formData.append(`alt_text_${i}`, document.querySelector(`input[name="alt_text_${i}"]`).value);
+                    formData.append(`sort_order_${i}`, document.querySelector(`input[name="sort_order_${i}"]`).value);
+                }
+            }
+            
+            try {
+                showResult('Uploading batch images...', true);
+                const response = await fetch(`${API_BASE}/api/images/batch-upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                showResult(JSON.stringify(result, null, 2), response.ok);
+                
+                if (response.ok) {
+                    // Refresh gallery display
+                    setTimeout(() => getGalleryImages(), 1000);
+                }
+            } catch (error) {
+                showResult(`Error: ${error.message}`, false);
+            }
+        });
+
+        // Get gallery images
+        async function getGalleryImages() {
+            const limit = document.getElementById('limitImages').value;
+            const offset = document.getElementById('offsetImages').value || 0;
+            const includeInactive = document.getElementById('includeInactive').checked;
+            
+            let url = `${API_BASE}/api/images/gallery`;
+            const params = new URLSearchParams();
+            
+            if (limit) params.append('limit', limit);
+            if (offset) params.append('offset', offset);
+            if (includeInactive) params.append('include_inactive', 'true');
+            
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+            
+            try {
+                showResult('Fetching gallery images...', true);
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                showResult(JSON.stringify(result, null, 2), response.ok);
+                
+                if (response.ok && result.data && result.data.images) {
+                    displayGallery(result.data.images);
+                }
+            } catch (error) {
+                showResult(`Error: ${error.message}`, false);
+            }
+        }
+
+        // Display gallery images
+        function displayGallery(images) {
+            const galleryDisplay = document.getElementById('galleryDisplay');
+            galleryDisplay.innerHTML = '';
+            
+            if (images.length === 0) {
+                galleryDisplay.innerHTML = '<p style="text-align: center; color: #666;">No gallery images found</p>';
+                return;
+            }
+            
+            images.forEach(image => {
+                const galleryItem = document.createElement('div');
+                galleryItem.className = 'gallery-item';
+                
+                // Format upload time
+                const uploadTime = new Date(image.upload_time || image.created_at);
+                const timeString = uploadTime.toLocaleString();
+                
+                galleryItem.innerHTML = `
+                    <img src="${image.urls.medium}" alt="${image.content.alt_text || image.content.title}" 
+                         onerror="this.src='${image.urls.small}'">
+                    <div class="gallery-info">
+                        <h4>${image.content.title || 'Untitled'}</h4>
+                        <p><strong>Category:</strong> ${image.content.category || 'Uncategorized'}</p>
+                        <p><strong>Description:</strong> ${image.content.description || 'No description'}</p>
+                        <p><strong>Upload Time:</strong> ${timeString}</p>
+                        <div class="metadata">
+                            <p><strong>ID:</strong> ${image.id} | <strong>Size:</strong> ${(image.metadata.size / 1024 / 1024).toFixed(2)} MB</p>
+                            <p><strong>Dimensions:</strong> ${image.metadata.width} × ${image.metadata.height}</p>
+                            <p><strong>Format:</strong> ${image.metadata.format.toUpperCase()}</p>
+                            <p><strong>Sort Order:</strong> ${image.sort_order} | <strong>Active:</strong> ${image.is_active ? 'Yes' : 'No'}</p>
+                            ${image.last_updated ? `<p><strong>Last Updated:</strong> ${new Date(image.last_updated).toLocaleString()}</p>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                galleryDisplay.appendChild(galleryItem);
+            });
+        }
+
+        // Show result
+        function showResult(message, isSuccess) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${isSuccess ? 'success' : 'error'}`;
+        }
+
+        // Initialize with one image field for batch upload
+        addImageField();
+        
+        // Load gallery images on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            getGalleryImages();
+        });
+    </script>
+</body>
+</html>

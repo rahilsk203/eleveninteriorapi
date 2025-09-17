@@ -20,6 +20,7 @@ const imageUploadSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(1000).optional(),
   alt_text: z.string().max(200).optional(),
+  category: z.string().max(100).optional(),
   sort_order: z.number().int().min(0).optional()
 });
 
@@ -27,6 +28,7 @@ const imageUpdateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(1000).optional(),
   alt_text: z.string().max(200).optional(),
+  category: z.string().max(100).optional(),
   sort_order: z.number().int().min(0).optional(),
   is_active: z.boolean().optional()
 });
@@ -37,6 +39,7 @@ const batchUploadSchema = z.object({
     title: z.string().max(200).optional(),
     description: z.string().max(1000).optional(),
     alt_text: z.string().max(200).optional(),
+    category: z.string().max(100).optional(),
     sort_order: z.number().int().min(0).optional()
   })).max(20) // Max 20 images per batch
 });
@@ -158,6 +161,7 @@ class ImageRoutes {
       const title = formData.get('title') || '';
       const description = formData.get('description') || '';
       const alt_text = formData.get('alt_text') || '';
+      const category = formData.get('category') || '';
       const sort_order = parseInt(formData.get('sort_order')) || 0;
 
       const validatedData = imageUploadSchema.parse({
@@ -165,6 +169,7 @@ class ImageRoutes {
         title: title || undefined,
         description: description || undefined,
         alt_text: alt_text || undefined,
+        category: category || undefined,
         sort_order
       });
 
@@ -194,6 +199,7 @@ class ImageRoutes {
         alt_text: validatedData.alt_text || '',
         title: validatedData.title || '',
         description: validatedData.description || '',
+        category: validatedData.category || '',
         sort_order: validatedData.sort_order
       };
 
@@ -214,11 +220,15 @@ class ImageRoutes {
           size: uploadResult.bytes
         },
         content: {
-          title: validatedData.title,
-          description: validatedData.description,
-          alt_text: validatedData.alt_text
+          title: validatedData.title || '',
+          description: validatedData.description || '',
+          alt_text: validatedData.alt_text || '',
+          category: validatedData.category || ''
         },
         sort_order: validatedData.sort_order,
+        upload_time: savedMetadata.created_at,
+        last_updated: savedMetadata.updated_at,
+        // Legacy field for backward compatibility
         uploaded_at: savedMetadata.created_at
       }, 201);
 
@@ -247,6 +257,7 @@ class ImageRoutes {
             title: formData.get(`title_${index}`) || '',
             description: formData.get(`description_${index}`) || '',
             alt_text: formData.get(`alt_text_${index}`) || '',
+            category: formData.get(`category_${index}`) || '',
             sort_order: parseInt(formData.get(`sort_order_${index}`)) || 0
           });
         }
@@ -303,6 +314,7 @@ class ImageRoutes {
             alt_text: imageData.alt_text,
             title: imageData.title,
             description: imageData.description,
+            category: imageData.category,
             sort_order: imageData.sort_order
           };
 
@@ -324,11 +336,15 @@ class ImageRoutes {
                 size: uploadResult.bytes
               },
               content: {
-                title: imageData.title,
-                description: imageData.description,
-                alt_text: imageData.alt_text
+                title: imageData.title || '',
+                description: imageData.description || '',
+                alt_text: imageData.alt_text || '',
+                category: imageData.category || ''
               },
               sort_order: imageData.sort_order,
+              upload_time: savedMetadata.created_at,
+              last_updated: savedMetadata.updated_at,
+              // Legacy field for backward compatibility
               uploaded_at: savedMetadata.created_at
             }
           };
@@ -409,12 +425,16 @@ class ImageRoutes {
             size: image.bytes
           },
           content: {
-            title: image.title,
-            description: image.description,
-            alt_text: image.alt_text
+            title: image.title || '',
+            description: image.description || '',
+            alt_text: image.alt_text || '',
+            category: image.category || ''
           },
           sort_order: image.sort_order,
           is_active: image.is_active,
+          upload_time: image.created_at,
+          last_updated: image.updated_at,
+          // Legacy fields for backward compatibility
           created_at: image.created_at,
           updated_at: image.updated_at
         };
@@ -479,12 +499,16 @@ class ImageRoutes {
           size: updatedImage.bytes
         },
         content: {
-          title: updatedImage.title,
-          description: updatedImage.description,
-          alt_text: updatedImage.alt_text
+          title: updatedImage.title || '',
+          description: updatedImage.description || '',
+          alt_text: updatedImage.alt_text || '',
+          category: updatedImage.category || ''
         },
         sort_order: updatedImage.sort_order,
         is_active: updatedImage.is_active,
+        upload_time: updatedImage.created_at,
+        last_updated: updatedImage.updated_at,
+        // Legacy field for backward compatibility
         updated_at: updatedImage.updated_at
       });
 

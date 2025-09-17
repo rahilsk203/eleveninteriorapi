@@ -20,6 +20,15 @@ const videoUploadSchema = z.object({
   alt_text: z.string().max(200).optional()
 });
 
+const batchVideoUploadSchema = z.object({
+  section: z.enum(['hero', 'feature']),
+  videos: z.array(z.object({
+    title: z.string().max(200).optional(),
+    description: z.string().max(1000).optional(),
+    alt_text: z.string().max(200).optional()
+  })).max(5) // Max 5 videos per batch
+});
+
 const videoUpdateSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().max(1000).optional(),
@@ -83,6 +92,7 @@ class VideoRoutes {
   constructor() {
     // Bind methods to preserve 'this' context
     this.uploadVideo = this.uploadVideo.bind(this);
+    this.uploadBatchVideos = this.uploadBatchVideos.bind(this);
     this.getVideo = this.getVideo.bind(this);
     this.updateVideo = this.updateVideo.bind(this);
     this.deleteVideo = this.deleteVideo.bind(this);
@@ -195,6 +205,182 @@ class VideoRoutes {
           alt_text: validatedData.alt_text
         },
         uploaded_at: savedMetadata.created_at
+      }, 201);
+
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Upload multiple videos (batch upload)
+  async uploadBatchVideos(request) {
+    try {
+      const contentType = request.headers.get('content-type');
+      
+      if (!contentType || !contentType.includes('multipart/form-data')) {
+        throw new ValidationError('Content-Type must be multipart/form-data');
+      }
+
+      const formData = await request.formData();
+      const section = formData.get('section');
+      
+      validateSection(section);
+
+      // Get all video files
+      const videoFiles = [];
+      
+      for (const [key, value] of formData.entries()) {
+        if (key.startsWith('video_') && value instanceof File) {
+          const index = key.split('_')[1];
+          videoFiles.push({
+            file: value,
+            title: formData.get(`title_${index}`) || '',
+            description: formData.get(`description_${index}`) || '',
+            alt_text: formData.get(`alt_text_${index}`) || ''
+          });
+        }
+      }
+
+      if (videoFiles.length === 0) {
+        throw new ValidationError('At least one video file is required');
+      }
+
+      if (videoFiles.length > 5) {
+        throw new ValidationError('Maximum 5 videos allowed per batch upload');
+      }
+
+      // Initialize services
+      const cloudinary = createCloudinaryService(request.env);
+      const db = new DatabaseService(request.env.DB);
+
+      // For hero and feature sections, we need to handle existing videos
+      const existingVideos = await db.getMediaBySection('video', section);
+      
+      // Delete existing videos if any (since hero/feature should be unique per section)
+      if (existingVideos.results.length > 0) {
+        for (const existingVideo of existingVideos.results) {
+          try {
+            await cloudinary.deleteFile(existingVideo.cloudinary_public_id, 'video');
+            await db.deleteMediaMetadata(existingVideo.id);
+          } catch (deleteError) {
+            console.warn('Failed to delete existing video:', deleteError.message);
+          }
+        }
+      }
+
+      const uploadResults = [];
+      const errors = [];
+
+      // Process uploads in parallel for better performance
+      const uploadPromises = videoFiles.map(async (videoData, index) => {
+        try {
+          // Validate file
+          const allowedTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/mov', 'video/avi'];
+          if (!allowedTypes.includes(videoData.file.type)) {
+            throw new ValidationError(`Invalid video type for video ${index + 1}: ${videoData.file.type}`);
+          }
+
+          const maxSize = 100 * 1024 * 1024; // 100MB
+          if (videoData.file.size > maxSize) {
+            throw new ValidationError(`Video ${index + 1} too large. Maximum size: ${maxSize / (1024 * 1024)}MB`);
+          }
+
+          // Upload to Cloudinary
+          const uploadResult = await cloudinary.uploadFile(videoData.file, {
+            resourceType: 'video',
+            folder: `eleven-interior/videos/${section}`,
+            publicId: `${section}_video_${Date.now()}_${index}`
+          });
+
+          // Save metadata to database
+          const metadata = {
+            media_type: 'video',
+            section: section,
+            cloudinary_public_id: uploadResult.public_id,
+            cloudinary_url: uploadResult.url,
+            cloudinary_secure_url: uploadResult.secure_url,
+            original_filename: videoData.file.name,
+            file_size: uploadResult.bytes,
+            width: uploadResult.width,
+            height: uploadResult.height,
+            format: uploadResult.format,
+            alt_text: videoData.alt_text,
+            title: videoData.title,
+            description: videoData.description,
+            sort_order: index,
+            duration: uploadResult.duration
+          };
+
+          const savedMetadata = await db.saveMediaMetadata(metadata);
+
+          // Generate optimized URLs
+          const optimizedUrls = {
+            original: uploadResult.secure_url,
+            hd: cloudinary.generateVideoUrl(uploadResult.public_id, { 
+              quality: 'auto:good', 
+              width: 1920, 
+              height: 1080 
+            }),
+            sd: cloudinary.generateVideoUrl(uploadResult.public_id, { 
+              quality: 'auto:low', 
+              width: 1280, 
+              height: 720 
+            }),
+            mobile: cloudinary.generateVideoUrl(uploadResult.public_id, { 
+              quality: 'auto:low', 
+              width: 768, 
+              height: 432 
+            })
+          };
+
+          return {
+            success: true,
+            index: index + 1,
+            data: {
+              id: savedMetadata.id,
+              section: section,
+              cloudinary_public_id: uploadResult.public_id,
+              urls: optimizedUrls,
+              metadata: {
+                width: uploadResult.width,
+                height: uploadResult.height,
+                duration: uploadResult.duration,
+                format: uploadResult.format,
+                size: uploadResult.bytes
+              },
+              content: {
+                title: videoData.title,
+                description: videoData.description,
+                alt_text: videoData.alt_text
+              },
+              uploaded_at: savedMetadata.upload_timestamp
+            }
+          };
+
+        } catch (error) {
+          return {
+            success: false,
+            index: index + 1,
+            error: error.message
+          };
+        }
+      });
+
+      const results = await Promise.all(uploadPromises);
+      
+      const successful = results.filter(r => r.success);
+      const failed = results.filter(r => !r.success);
+
+      return createResponse({
+        message: `Batch upload completed. ${successful.length} successful, ${failed.length} failed.`,
+        section: section,
+        successful_uploads: successful.map(r => r.data),
+        failed_uploads: failed.map(r => ({ index: r.index, error: r.error })),
+        summary: {
+          total: videoFiles.length,
+          successful: successful.length,
+          failed: failed.length
+        }
       }, 201);
 
     } catch (error) {

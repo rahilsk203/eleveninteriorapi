@@ -41,13 +41,13 @@ class HealthRoutes {
     const path = url.pathname;
 
     try {
-      if (path === '/health' || path === '/health/') {
+      if (path === '/health' || path === '/health/' || path === '/api/health') {
         return await this.basicHealth(request);
-      } else if (path === '/health/detailed') {
+      } else if (path === '/health/detailed' || path === '/api/health/detailed') {
         return await this.detailedHealth(request);
-      } else if (path === '/health/database') {
+      } else if (path === '/health/database' || path === '/api/health/database') {
         return await this.databaseHealth(request);
-      } else if (path === '/health/cloudinary') {
+      } else if (path === '/health/cloudinary' || path === '/api/health/cloudinary') {
         return await this.cloudinaryHealth(request);
       } else {
         return new Response('Not Found', { status: 404, headers: corsHeaders });

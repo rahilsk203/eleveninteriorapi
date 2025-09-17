@@ -257,7 +257,7 @@ class DatabaseService {
   }
 
   async updateMediaMetadata(id, updates) {
-    const allowedFields = ['alt_text', 'title', 'description', 'sort_order', 'is_active'];
+    const allowedFields = ['alt_text', 'title', 'description', 'category', 'sort_order', 'is_active'];
     const setClause = [];
     const params = [];
 

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production API Test - Eleven Interior</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 10px 10px 0;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Production API Test - Eleven Interior</h1>
+        <p><strong>API URL:</strong> https://eleven-interior-api.aichatapi.workers.dev</p>
+        
+        <div>
+            <button class="button" onclick="testHealthEndpoint()">Test Health Endpoint</button>
+            <button class="button" onclick="testGalleryImages()">Test Gallery Images</button>
+            <button class="button" onclick="testAllEndpoints()">Test All Endpoints</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://eleven-interior-api.aichatapi.workers.dev';
+
+        async function testHealthEndpoint() {
+            showResult('Testing health endpoint...', true);
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                if (response.ok) {
+                    const result = await response.json();
+                    showResult(`Health Endpoint Test:\nStatus: ${response.status}\nResponse: ${JSON.stringify(result, null, 2)}`, response.ok);
+                } else {
+                    const text = await response.text();
+                    showResult(`Health Endpoint Error:\nStatus: ${response.status}\nResponse: ${text}`, false);
+                }
+            } catch (error) {
+                showResult(`Health Endpoint Error: ${error.message}`, false);
+            }
+        }
+
+        async function testGalleryImages() {
+            showResult('Testing gallery images endpoint...', true);
+            try {
+                const response = await fetch(`${API_BASE}/api/images/gallery`);
+                if (response.ok) {
+                    const result = await response.json();
+                    showResult(`Gallery Images Test:\nStatus: ${response.status}\nResponse: ${JSON.stringify(result, null, 2)}`, response.ok);
+                } else {
+                    const text = await response.text();
+                    showResult(`Gallery Images Error:\nStatus: ${response.status}\nResponse: ${text}`, false);
+                }
+            } catch (error) {
+                showResult(`Gallery Images Error: ${error.message}`, false);
+            }
+        }
+
+        async function testAllEndpoints() {
+            showResult('Testing all endpoints...', true);
+            
+            const endpoints = [
+                { name: 'Health', url: '/api/health' },
+                { name: 'Gallery Images', url: '/api/images/gallery' },
+                { name: 'Hero Videos', url: '/api/videos/hero' },
+                { name: 'Feature Videos', url: '/api/videos/feature' },
+                { name: 'Contact Images', url: '/api/images/contact' },
+                { name: 'Entrance Images', url: '/api/images/entrance' },
+                { name: 'About Images', url: '/api/images/about' },
+                { name: 'Logo Images', url: '/api/images/logo' },
+                { name: 'Swordman Images', url: '/api/images/swordman' }
+            ];
+
+            let results = [];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${API_BASE}${endpoint.url}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        results.push(`✅ ${endpoint.name}: ${response.status} - Working (${data.data ? Object.keys(data.data).length : 0} items)`);
+                    } else {
+                        const text = await response.text();
+                        results.push(`❌ ${endpoint.name}: ${response.status} - ${text.substring(0, 50)}...`);
+                    }
+                } catch (error) {
+                    results.push(`❌ ${endpoint.name}: Failed - ${error.message}`);
+                }
+            }
+
+            showResult(`All Endpoints Test Results:\n\n${results.join('\n')}`, true);
+        }
+
+        function showResult(message, isSuccess) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${isSuccess ? 'success' : 'error'}`;
+        }
+
+        // Auto-test on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            testHealthEndpoint();
+        });
+    </script>
+</body>
+</html>

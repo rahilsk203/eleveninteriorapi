@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eleven Interior API - Video Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.secondary {
+            background-color: #6c757d;
+        }
+        button.secondary:hover {
+            background-color: #545b62;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .video-file-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .video-file-item input {
+            margin-left: 10px;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            border-bottom-color: #007bff;
+            color: #007bff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Eleven Interior API - Video Upload Test</h1>
+        <p>✅ <strong>Multiple Upload Support:</strong> Upload single videos or batch upload up to 5 videos</p>
+        <p>📁 <strong>Sections:</strong> Hero and Feature sections supported</p>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('single')">Single Upload</div>
+            <div class="tab" onclick="switchTab('batch')">Batch Upload (Multiple)</div>
+        </div>
+        
+        <!-- Single Upload Tab -->
+        <div id="single-tab" class="tab-content active">
+            <form id="singleUploadForm">
+                <div class="form-group">
+                    <label for="section">Section:</label>
+                    <select id="section" name="section" required>
+                        <option value="hero">Hero</option>
+                        <option value="feature">Feature</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="video">Select Video:</label>
+                    <input type="file" id="video" name="video" accept="video/*" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="title">Title (optional):</label>
+                    <input type="text" id="title" name="title" placeholder="Video title">
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Description (optional):</label>
+                    <textarea id="description" name="description" placeholder="Video description" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="alt_text">Alt Text (optional):</label>
+                    <input type="text" id="alt_text" name="alt_text" placeholder="Alt text for accessibility">
+                </div>
+                
+                <div class="form-group">
+                    <label for="adminKey">Admin API Key:</label>
+                    <input type="password" id="adminKey" name="adminKey" value="eleve1n-interior-admin-api-key-2024-secure" required>
+                </div>
+                
+                <button type="submit">Upload Video</button>
+            </form>
+        </div>
+        
+        <!-- Batch Upload Tab -->
+        <div id="batch-tab" class="tab-content">
+            <form id="batchUploadForm">
+                <div class="form-group">
+                    <label for="batchSection">Section:</label>
+                    <select id="batchSection" name="section" required>
+                        <option value="hero">Hero</option>
+                        <option value="feature">Feature</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Videos (Max 5):</label>
+                    <div id="videoContainer">
+                        <div class="video-file-item" data-index="0">
+                            <input type="file" name="video_0" accept="video/*" required>
+                            <input type="text" name="title_0" placeholder="Title (optional)" style="margin-left: 10px;">
+                            <input type="text" name="description_0" placeholder="Description (optional)">
+                            <input type="text" name="alt_text_0" placeholder="Alt text (optional)">
+                        </div>
+                    </div>
+                    <button type="button" onclick="addVideoInput()" class="secondary">Add Another Video</button>
+                    <button type="button" onclick="removeVideoInput()" class="secondary">Remove Last</button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="batchAdminKey">Admin API Key:</label>
+                    <input type="password" id="batchAdminKey" name="adminKey" value="el1even-interior-admin-api-key-2024-secure" required>
+                </div>
+                
+                <button type="submit">Upload Videos (Batch)</button>
+            </form>
+        </div>
+        
+        <div id="response"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://eleven-interior-api.aichatapi.workers.dev/api/v1';
+        let videoInputCount = 1;
+        
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function addVideoInput() {
+            if (videoInputCount >= 5) {
+                alert('Maximum 5 videos allowed');
+                return;
+            }
+            
+            const container = document.getElementById('videoContainer');
+            const newInput = document.createElement('div');
+            newInput.className = 'video-file-item';
+            newInput.setAttribute('data-index', videoInputCount);
+            newInput.innerHTML = `
+                <input type="file" name="video_${videoInputCount}" accept="video/*" required>
+                <input type="text" name="title_${videoInputCount}" placeholder="Title (optional)" style="margin-left: 10px;">
+                <input type="text" name="description_${videoInputCount}" placeholder="Description (optional)">
+                <input type="text" name="alt_text_${videoInputCount}" placeholder="Alt text (optional)">
+            `;
+            container.appendChild(newInput);
+            videoInputCount++;
+        }
+        
+        function removeVideoInput() {
+            if (videoInputCount <= 1) {
+                alert('At least one video is required');
+                return;
+            }
+            
+            const container = document.getElementById('videoContainer');
+            const lastInput = container.lastElementChild;
+            if (lastInput) {
+                container.removeChild(lastInput);
+                videoInputCount--;
+            }
+        }
+        
+        // Single Upload Handler
+        document.getElementById('singleUploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const responseDiv = document.getElementById('response');
+            responseDiv.innerHTML = '<div class="response loading">Uploading video...</div>';
+            
+            try {
+                const formData = new FormData();
+                const section = document.getElementById('section').value;
+                const video = document.getElementById('video').files[0];
+                const title = document.getElementById('title').value;
+                const description = document.getElementById('description').value;
+                const alt_text = document.getElementById('alt_text').value;
+                const adminKey = document.getElementById('adminKey').value;
+                
+                if (!video) {
+                    throw new Error('Please select a video file');
+                }
+                
+                formData.append('video', video);
+                formData.append('section', section);
+                if (title) formData.append('title', title);
+                if (description) formData.append('description', description);
+                if (alt_text) formData.append('alt_text', alt_text);
+                
+                const response = await fetch(`${API_BASE}/admin/videos/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'X-API-Key': adminKey
+                    },
+                    body: formData
+                });
+                
+                const result = await response.text();
+                
+                if (response.ok) {
+                    responseDiv.innerHTML = `<div class="response success">✅ Single Upload Successful!\\n\\n${result}</div>`;
+                } else {
+                    responseDiv.innerHTML = `<div class="response error">❌ Single Upload Failed!\\n\\nStatus: ${response.status}\\nResponse: ${result}</div>`;
+                }
+                
+            } catch (error) {
+                responseDiv.innerHTML = `<div class="response error">❌ Error: ${error.message}</div>`;
+            }
+        });
+        
+        // Batch Upload Handler
+        document.getElementById('batchUploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const responseDiv = document.getElementById('response');
+            responseDiv.innerHTML = '<div class="response loading">Uploading videos (batch)...</div>';
+            
+            try {
+                const formData = new FormData();
+                const section = document.getElementById('batchSection').value;
+                const adminKey = document.getElementById('batchAdminKey').value;
+                
+                formData.append('section', section);
+                
+                // Add all video files and their metadata
+                let videoCount = 0;
+                for (let i = 0; i < videoInputCount; i++) {
+                    const videoInput = document.querySelector(`input[name="video_${i}"]`);
+                    if (videoInput && videoInput.files[0]) {
+                        formData.append(`video_${i}`, videoInput.files[0]);
+                        
+                        const titleInput = document.querySelector(`input[name="title_${i}"]`);
+                        if (titleInput && titleInput.value) {
+                            formData.append(`title_${i}`, titleInput.value);
+                        }
+                        
+                        const descInput = document.querySelector(`input[name="description_${i}"]`);
+                        if (descInput && descInput.value) {
+                            formData.append(`description_${i}`, descInput.value);
+                        }
+                        
+                        const altInput = document.querySelector(`input[name="alt_text_${i}"]`);
+                        if (altInput && altInput.value) {
+                            formData.append(`alt_text_${i}`, altInput.value);
+                        }
+                        
+                        videoCount++;
+                    }
+                }
+                
+                if (videoCount === 0) {
+                    throw new Error('Please select at least one video file');
+                }
+                
+                const response = await fetch(`${API_BASE}/admin/videos/batch-upload`, {
+                    method: 'POST',
+                    headers: {
+                        'X-API-Key': adminKey
+                    },
+                    body: formData
+                });
+                
+                const result = await response.text();
+                
+                if (response.ok) {
+                    responseDiv.innerHTML = `<div class="response success">✅ Batch Upload Successful!\\n\\n${result}</div>`;
+                } else {
+                    responseDiv.innerHTML = `<div class="response error">❌ Batch Upload Failed!\\n\\nStatus: ${response.status}\\nResponse: ${result}</div>`;
+                }
+                
+            } catch (error) {
+                responseDiv.innerHTML = `<div class="response error">❌ Error: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

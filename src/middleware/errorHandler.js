@@ -10,6 +10,7 @@ const ERROR_CATEGORIES = new Map([
   ['ValidationError', { status: 400, code: 'VALIDATION_ERROR' }],
   ['NotFoundError', { status: 404, code: 'NOT_FOUND' }],
   ['UnauthorizedError', { status: 401, code: 'UNAUTHORIZED' }],
+  ['AuthenticationError', { status: 401, code: 'AUTHENTICATION_ERROR' }],
   ['ForbiddenError', { status: 403, code: 'FORBIDDEN' }],
   ['ConflictError', { status: 409, code: 'CONFLICT' }],
   ['RateLimitError', { status: 429, code: 'RATE_LIMIT' }],
@@ -162,6 +163,13 @@ export class UnauthorizedError extends Error {
   constructor(message = 'Unauthorized access') {
     super(message);
     this.name = 'UnauthorizedError';
+  }
+}
+
+export class AuthenticationError extends Error {
+  constructor(message = 'Authentication failed') {
+    super(message);
+    this.name = 'AuthenticationError';
   }
 }
 

@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Test - Eleven Interior API</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .auth-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .auth-section.authenticated {
+            border-color: #27ae60;
+            background-color: #eafaf1;
+        }
+        .auth-section h3 {
+            color: #34495e;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .button {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px 5px 5px 0;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+        .button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .button.logout {
+            background-color: #e74c3c;
+        }
+        .button.logout:hover {
+            background-color: #c0392b;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .user-info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .token-display {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-connected {
+            background-color: #27ae60;
+        }
+        .status-disconnected {
+            background-color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Authentication System Test - Eleven Interior API</h1>
+        
+        <!-- Connection Status -->
+        <div class="auth-section">
+            <h3><span id="statusIndicator" class="status-indicator status-disconnected"></span>Connection Status</h3>
+            <p><strong>API URL:</strong> <span id="apiUrl">https://eleven-interior-api.aichatapi.workers.dev</span></p>
+            <p><strong>Status:</strong> <span id="connectionStatus">Checking...</span></p>
+            <button class="button" onclick="checkConnection()">Test Connection</button>
+        </div>
+
+        <!-- User Info (when authenticated) -->
+        <div id="userInfoSection" class="auth-section authenticated hidden">
+            <h3>👤 User Information</h3>
+            <div id="userInfo" class="user-info"></div>
+            <button class="button" onclick="getProfile()">Refresh Profile</button>
+            <button class="button logout" onclick="logout()">Logout</button>
+        </div>
+
+        <!-- Setup Admin User -->
+        <div id="setupSection" class="auth-section">
+            <h3>⚙️ Setup Admin User (First Time Only)</h3>
+            <div class="form-group">
+                <label for="setupEmail">Admin Email:</label>
+                <input type="email" id="setupEmail" placeholder="admin@eleveninterior.com" value="admin@eleveninterior.com">
+            </div>
+            <div class="form-group">
+                <label for="setupPassword">Admin Password:</label>
+                <input type="password" id="setupPassword" placeholder="minimum 8 characters" value="admin123456">
+            </div>
+            <button class="button" onclick="setupAdmin()">Create Admin User</button>
+        </div>
+
+        <!-- Quick API Key Access (Always Visible) -->
+        <div class="auth-section">
+            <h3>🔑 Quick API Key Access</h3>
+            <p><strong>Use this section to directly enter your admin API key without logging in.</strong></p>
+            
+            <div class="form-group">
+                <label for="quickApiKey">Enter Admin API Key:</label>
+                <input type="text" id="quickApiKey" placeholder="Paste your admin API key here" style="font-family: 'Courier New', monospace; width: 100%;">
+            </div>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                <button class="button" onclick="setQuickApiKey()">Set API Key</button>
+                <button class="button" onclick="testQuickApiKey()">Test API Key</button>
+                <button class="button" onclick="copyQuickApiKey()" style="background-color: #27ae60;">Copy API Key</button>
+                <button class="button" onclick="clearQuickApiKey()" style="background-color: #e67e22;">Clear</button>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <strong>API Key Status:</strong>
+                <div id="quickApiKeyStatus" class="token-display">No API key entered</div>
+            </div>
+            
+            <div style="margin-top: 10px;">
+                <strong>Usage Example:</strong>
+                <div class="token-display">Header: X-API-Key: your-api-key-here</div>
+            </div>
+        </div>
+
+        <!-- Login -->
+        <div id="loginSection" class="auth-section">
+            <h3>🚪 Login</h3>
+            <div class="form-group">
+                <label for="loginEmail">Email:</label>
+                <input type="email" id="loginEmail" placeholder="admin@eleveninterior.com" value="admin@eleveninterior.com">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" placeholder="password" value="admin123456">
+            </div>
+            <button class="button" onclick="login()">Login</button>
+        </div>
+
+        <!-- Change Password -->
+        <div id="changePasswordSection" class="auth-section hidden">
+            <h3>🔒 Change Password</h3>
+            <div class="form-group">
+                <label for="currentPassword">Current Password:</label>
+                <input type="password" id="currentPassword" placeholder="current password">
+            </div>
+            <div class="form-group">
+                <label for="newPassword">New Password:</label>
+                <input type="password" id="newPassword" placeholder="new password (min 8 chars)">
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password:</label>
+                <input type="password" id="confirmPassword" placeholder="confirm new password">
+            </div>
+            <button class="button" onclick="changePassword()">Change Password</button>
+        </div>
+
+        <!-- Token Management -->
+        <div id="tokenSection" class="auth-section hidden">
+            <h3>🎫 Token Management</h3>
+            <div>
+                <strong>Access Token:</strong>
+                <div id="accessTokenDisplay" class="token-display">Not available</div>
+            </div>
+            <div style="margin-top: 15px;">
+                <strong>Refresh Token:</strong>
+                <div id="refreshTokenDisplay" class="token-display">Not available</div>
+            </div>
+            <button class="button" onclick="refreshToken()">Refresh Access Token</button>
+            <button class="button" onclick="testProtectedEndpoint()">Test Protected Endpoint</button>
+        </div>
+
+        <!-- API Key Management -->
+        <div id="apiKeySection" class="auth-section hidden">
+            <h3>🔑 Admin API Key Management</h3>
+            
+            <!-- Manual API Key Input -->
+            <div class="form-group">
+                <label for="manualApiKey">Enter Admin API Key:</label>
+                <input type="text" id="manualApiKey" placeholder="Paste your admin API key here" style="font-family: 'Courier New', monospace;">
+                <button class="button" onclick="setManualApiKey()" style="margin-top: 10px;">Set API Key</button>
+                <button class="button" onclick="clearApiKey()" style="margin-top: 10px; background-color: #e67e22;">Clear</button>
+            </div>
+            
+            <hr style="margin: 20px 0;">
+            
+            <div>
+                <strong>Current Admin API Key:</strong>
+                <div id="apiKeyDisplay" class="token-display">Not retrieved</div>
+            </div>
+            <div style="margin-top: 15px;">
+                <strong>Usage Instructions:</strong>
+                <div id="apiKeyUsage" class="token-display">Not available</div>
+            </div>
+            <button class="button" onclick="getAdminApiKey()">Get Admin API Key from Server</button>
+            <button class="button" onclick="regenerateApiKey()">Regenerate API Key</button>
+            <button class="button" onclick="testApiKeyAccess()">Test API Key Access</button>
+            <button class="button" onclick="copyApiKey()" style="background-color: #27ae60;">Copy API Key</button>
+        </div>
+
+        <!-- Results -->
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://eleven-interior-api.aichatapi.workers.dev';
+        let currentTokens = null;
+        let currentUser = null;
+        let currentApiKey = null; // Store current API key
+
+        // Check connection on load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkConnection();
+            loadStoredAuth();
+        });
+
+        // Load stored authentication
+        function loadStoredAuth() {
+            const stored = localStorage.getItem('elevenInteriorAuth');
+            if (stored) {
+                try {
+                    const auth = JSON.parse(stored);
+                    currentTokens = auth.tokens;
+                    currentUser = auth.user;
+                    updateUIAfterLogin();
+                } catch (error) {
+                    localStorage.removeItem('elevenInteriorAuth');
+                }
+            }
+        }
+
+        // Save authentication to storage
+        function saveAuth(user, tokens) {
+            localStorage.setItem('elevenInteriorAuth', JSON.stringify({
+                user,
+                tokens,
+                timestamp: Date.now()
+            }));
+        }
+
+        // Clear authentication
+        function clearAuth() {
+            localStorage.removeItem('elevenInteriorAuth');
+            currentTokens = null;
+            currentUser = null;
+        }
+
+        // Check API connection
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('connectionStatus').textContent = 'Connected ✅';
+                    document.getElementById('statusIndicator').className = 'status-indicator status-connected';
+                    showResult(`Connection Test Success:\n${JSON.stringify(result, null, 2)}`, true);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                document.getElementById('connectionStatus').textContent = `Disconnected ❌ (${error.message})`;
+                document.getElementById('statusIndicator').className = 'status-indicator status-disconnected';
+                showResult(`Connection Test Failed: ${error.message}`, false);
+            }
+        }
+
+        // Setup admin user
+        async function setupAdmin() {
+            const email = document.getElementById('setupEmail').value;
+            const password = document.getElementById('setupPassword').value;
+
+            if (!email || !password) {
+                showResult('Please fill in both email and password', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/setup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+                showResult(`Setup Admin User:\n${JSON.stringify(result, null, 2)}`, response.ok);
+
+                if (response.ok) {
+                    // Auto-fill login form
+                    document.getElementById('loginEmail').value = email;
+                    document.getElementById('loginPassword').value = password;
+                    
+                    // Show API key if provided in response
+                    if (result.data.adminApiKey) {
+                        // Set API key in quick section
+                        document.getElementById('quickApiKey').value = result.data.adminApiKey;
+                        currentApiKey = result.data.adminApiKey;
+                        document.getElementById('quickApiKeyStatus').innerHTML = `
+                            <strong>API Key Retrieved:</strong><br>
+                            <span style="color: #27ae60;">✅ ${result.data.adminApiKey.substring(0, 20)}...${result.data.adminApiKey.slice(-10)}</span><br>
+                            <small>From admin setup</small>
+                        `;
+                        
+                        showResult(`✅ Setup Success!
+
+Admin API Key: ${result.data.adminApiKey}
+
+Full Response:
+${JSON.stringify(result, null, 2)}`, true);
+                    }
+                }
+            } catch (error) {
+                showResult(`Setup Error: ${error.message}`, false);
+            }
+        }
+
+        // Login
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showResult('Please fill in both email and password', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+                showResult(`Login Response:\n${JSON.stringify(result, null, 2)}`, response.ok);
+
+                if (response.ok) {
+                    currentUser = result.data.user;
+                    currentTokens = result.data.tokens;
+                    saveAuth(currentUser, currentTokens);
+                    updateUIAfterLogin();
+                }
+            } catch (error) {
+                showResult(`Login Error: ${error.message}`, false);
+            }
+        }
+
+        // Update UI after successful login
+        function updateUIAfterLogin() {
+            // Show authenticated sections
+            document.getElementById('userInfoSection').classList.remove('hidden');
+            document.getElementById('changePasswordSection').classList.remove('hidden');
+            document.getElementById('tokenSection').classList.remove('hidden');
+            document.getElementById('apiKeySection').classList.remove('hidden');
+
+            // Hide login section
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('setupSection').classList.add('hidden');
+
+            // Update user info
+            if (currentUser) {
+                document.getElementById('userInfo').innerHTML = `
+                    <p><strong>ID:</strong> ${currentUser.id}</p>
+                    <p><strong>Email:</strong> ${currentUser.email}</p>
+                    <p><strong>Role:</strong> ${currentUser.role}</p>
+                    <p><strong>Created:</strong> ${new Date(currentUser.created_at).toLocaleString()}</p>
+                    <p><strong>Last Login:</strong> ${new Date(currentUser.last_login).toLocaleString()}</p>
+                `;
+            }
+
+            // Update token displays
+            if (currentTokens) {
+                document.getElementById('accessTokenDisplay').textContent = currentTokens.accessToken;
+                document.getElementById('refreshTokenDisplay').textContent = currentTokens.refreshToken;
+            }
+        }
+
+        // Update UI after logout
+        function updateUIAfterLogout() {
+            // Hide authenticated sections
+            document.getElementById('userInfoSection').classList.add('hidden');
+            document.getElementById('changePasswordSection').classList.add('hidden');
+            document.getElementById('tokenSection').classList.add('hidden');
+            document.getElementById('apiKeySection').classList.add('hidden');
+
+            // Show login section
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('setupSection').classList.remove('hidden');
+
+            // Clear displays
+            document.getElementById('userInfo').innerHTML = '';
+            document.getElementById('accessTokenDisplay').textContent = 'Not available';
+            document.getElementById('refreshTokenDisplay').textContent = 'Not available';
+            document.getElementById('apiKeyDisplay').textContent = 'Not retrieved';
+            document.getElementById('apiKeyUsage').textContent = 'Not available';
+        }
+
+        // Get user profile
+        async function getProfile() {
+            if (!currentTokens) {
+                showResult('Please login first', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentTokens.accessToken}`
+                    }
+                });
+
+                const result = await response.json();
+                showResult(`Profile Response:\n${JSON.stringify(result, null, 2)}`, response.ok);
+
+                if (response.ok) {
+                    currentUser = result.data.user;
+                    updateUIAfterLogin();
+                }
+            } catch (error) {
+                showResult(`Profile Error: ${error.message}`, false);
+            }
+        }
+
+        // Change password
+        async function changePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showResult('Please fill in all password fields', false);
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showResult('New passwords do not match', false);
+                return;
+            }
+
+            if (!currentTokens) {
+                showResult('Please login first', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/change-password`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${currentTokens.accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        currentPassword,
+                        newPassword,
+                        confirmPassword
+                    })
+                });
+
+                const result = await response.json();
+                showResult(`Change Password Response:\n${JSON.stringify(result, null, 2)}`, response.ok);
+
+                if (response.ok) {
+                    // Clear password fields
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                    
+                    // Force logout since all tokens are revoked
+                    logout();
+                }
+            } catch (error) {
+                showResult(`Change Password Error: ${error.message}`, false);
+            }
+        }
+
+        // Refresh access token
+        async function refreshToken() {
+            if (!currentTokens || !currentTokens.refreshToken) {
+                showResult('No refresh token available', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/refresh`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        refreshToken: currentTokens.refreshToken
+                    })
+                });
+
+                const result = await response.json();
+                showResult(`Refresh Token Response:\n${JSON.stringify(result, null, 2)}`, response.ok);
+
+                if (response.ok) {
+                    currentTokens.accessToken = result.data.tokens.accessToken;
+                    saveAuth(currentUser, currentTokens);
+                    updateUIAfterLogin();
+                }
+            } catch (error) {
+                showResult(`Refresh Token Error: ${error.message}`, false);
+            }
+        }
+
+        // Test protected endpoint
+        async function testProtectedEndpoint() {
+            if (!currentTokens) {
+                showResult('Please login first', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/inquiries`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentTokens.accessToken}`
+                    }
+                });
+
+                const result = await response.json();
+                showResult(`Protected Endpoint Test:\n${JSON.stringify(result, null, 2)}`, response.ok);
+            } catch (error) {
+                showResult(`Protected Endpoint Error: ${error.message}`, false);
+            }
+        }
+
+        // Logout
+        async function logout() {
+            if (currentTokens && currentTokens.refreshToken) {
+                try {
+                    await fetch(`${API_BASE}/api/auth/logout`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            refreshToken: currentTokens.refreshToken
+                        })
+                    });
+                } catch (error) {
+                    console.log('Logout request failed:', error);
+                }
+            }
+
+            clearAuth();
+            updateUIAfterLogout();
+            showResult('Logged out successfully', true);
+        }
+
+        // Get Admin API Key
+        async function getAdminApiKey() {
+            if (!currentTokens) {
+                showResult('Please login first', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/api-key`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentTokens.accessToken}`
+                    }
+                });
+
+                const result = await response.json();
+                showResult(`Admin API Key Response:\n${JSON.stringify(result, null, 2)}`, response.ok);
+
+                if (response.ok && result.data) {
+                    currentApiKey = result.data.adminApiKey;
+                    document.getElementById('apiKeyDisplay').textContent = result.data.adminApiKey;
+                    document.getElementById('apiKeyUsage').innerHTML = `
+                        <strong>Header:</strong> ${result.data.usage.header}<br>
+                        <strong>Example:</strong> ${result.data.usage.example}
+                    `;
+                    
+                    // Also update quick section
+                    document.getElementById('quickApiKey').value = result.data.adminApiKey;
+                    document.getElementById('quickApiKeyStatus').innerHTML = `
+                        <strong>API Key Retrieved:</strong><br>
+                        <span style="color: #27ae60;">✅ ${result.data.adminApiKey.substring(0, 20)}...${result.data.adminApiKey.slice(-10)}</span><br>
+                        <small>From server</small>
+                    `;
+                }
+            } catch (error) {
+                showResult(`API Key Error: ${error.message}`, false);
+            }
+        }
+
+        // Regenerate API Key
+        async function regenerateApiKey() {
+            if (!currentTokens) {
+                showResult('Please login first', false);
+                return;
+            }
+
+            if (!confirm('Are you sure you want to regenerate the API key? This will invalidate the current key.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/regenerate-api-key`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${currentTokens.accessToken}`
+                    }
+                });
+
+                const result = await response.json();
+                showResult(`Regenerate API Key Response:\n${JSON.stringify(result, null, 2)}`, response.ok);
+
+                if (response.ok && result.data) {
+                    alert(`New API Key Generated: ${result.data.newApiKey}\n\nPlease update your environment variables and redeploy!`);
+                }
+            } catch (error) {
+                showResult(`Regenerate API Key Error: ${error.message}`, false);
+            }
+        }
+
+        // Test API Key Access
+        async function testApiKeyAccess() {
+            const apiKey = document.getElementById('apiKeyDisplay').textContent;
+            
+            if (!apiKey || apiKey === 'Not retrieved') {
+                showResult('Please get the API key first', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/inquiries`, {
+                    headers: {
+                        'X-API-Key': apiKey
+                    }
+                });
+
+                const result = await response.json();
+                showResult(`API Key Access Test:\n${JSON.stringify(result, null, 2)}`, response.ok);
+            } catch (error) {
+                showResult(`API Key Access Error: ${error.message}`, false);
+            }
+        }
+
+        // === QUICK API KEY FUNCTIONS ===
+        
+        // Set quick API key
+        function setQuickApiKey() {
+            const apiKey = document.getElementById('quickApiKey').value.trim();
+            
+            if (!apiKey) {
+                showResult('Please enter an API key', false);
+                return;
+            }
+            
+            currentApiKey = apiKey;
+            document.getElementById('quickApiKeyStatus').innerHTML = `
+                <strong>API Key Set:</strong><br>
+                <span style="color: #27ae60;">${apiKey.substring(0, 20)}...${apiKey.slice(-10)}</span><br>
+                <small>Ready for testing</small>
+            `;
+            
+            // Also update the authenticated section if visible
+            if (!document.getElementById('apiKeySection').classList.contains('hidden')) {
+                document.getElementById('apiKeyDisplay').textContent = apiKey;
+                document.getElementById('apiKeyUsage').innerHTML = `
+                    <strong>Header:</strong> X-API-Key<br>
+                    <strong>Example:</strong> X-API-Key: ${apiKey}
+                `;
+            }
+            
+            showResult(`API key set successfully: ${apiKey.substring(0, 20)}...${apiKey.slice(-10)}`, true);
+        }
+        
+        // Test quick API key
+        async function testQuickApiKey() {
+            if (!currentApiKey) {
+                const apiKey = document.getElementById('quickApiKey').value.trim();
+                if (!apiKey) {
+                    showResult('Please enter an API key first', false);
+                    return;
+                }
+                currentApiKey = apiKey;
+            }
+            
+            try {
+                showResult('Testing API key access...', true);
+                
+                const response = await fetch(`${API_BASE}/api/admin/inquiries`, {
+                    headers: {
+                        'X-API-Key': currentApiKey
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult(`✅ API Key Test Successful!\n\nResponse:\n${JSON.stringify(result, null, 2)}`, true);
+                    document.getElementById('quickApiKeyStatus').innerHTML = `
+                        <strong>API Key Status:</strong><br>
+                        <span style="color: #27ae60;">✅ Valid and Working</span><br>
+                        <small>Last tested: ${new Date().toLocaleTimeString()}</small>
+                    `;
+                } else {
+                    showResult(`❌ API Key Test Failed!\n\nError:\n${JSON.stringify(result, null, 2)}`, false);
+                    document.getElementById('quickApiKeyStatus').innerHTML = `
+                        <strong>API Key Status:</strong><br>
+                        <span style="color: #e74c3c;">❌ Invalid or Expired</span><br>
+                        <small>Test failed: ${new Date().toLocaleTimeString()}</small>
+                    `;
+                }
+            } catch (error) {
+                showResult(`API Key Test Error: ${error.message}`, false);
+                document.getElementById('quickApiKeyStatus').innerHTML = `
+                    <strong>API Key Status:</strong><br>
+                    <span style="color: #e74c3c;">❌ Connection Error</span><br>
+                    <small>Error: ${error.message}</small>
+                `;
+            }
+        }
+        
+        // Copy quick API key
+        async function copyQuickApiKey() {
+            const apiKey = currentApiKey || document.getElementById('quickApiKey').value.trim();
+            
+            if (!apiKey) {
+                showResult('No API key to copy', false);
+                return;
+            }
+            
+            try {
+                await navigator.clipboard.writeText(apiKey);
+                showResult('API key copied to clipboard!', true);
+            } catch (error) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = apiKey;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showResult('API key copied to clipboard!', true);
+            }
+        }
+        
+        // Clear quick API key
+        function clearQuickApiKey() {
+            document.getElementById('quickApiKey').value = '';
+            currentApiKey = null;
+            document.getElementById('quickApiKeyStatus').textContent = 'No API key entered';
+            showResult('API key cleared', true);
+        }
+        
+        // === AUTHENTICATED API KEY FUNCTIONS ===
+        
+        // Set manual API key (in authenticated section)
+        function setManualApiKey() {
+            const apiKey = document.getElementById('manualApiKey').value.trim();
+            
+            if (!apiKey) {
+                showResult('Please enter an API key', false);
+                return;
+            }
+            
+            currentApiKey = apiKey;
+            document.getElementById('apiKeyDisplay').textContent = apiKey;
+            document.getElementById('apiKeyUsage').innerHTML = `
+                <strong>Header:</strong> X-API-Key<br>
+                <strong>Example:</strong> X-API-Key: ${apiKey}
+            `;
+            
+            // Also update quick section
+            document.getElementById('quickApiKey').value = apiKey;
+            document.getElementById('quickApiKeyStatus').innerHTML = `
+                <strong>API Key Set:</strong><br>
+                <span style="color: #27ae60;">${apiKey.substring(0, 20)}...${apiKey.slice(-10)}</span><br>
+                <small>Ready for testing</small>
+            `;
+            
+            showResult(`API key set successfully: ${apiKey.substring(0, 20)}...${apiKey.slice(-10)}`, true);
+        }
+        
+        // Clear API key (in authenticated section)
+        function clearApiKey() {
+            document.getElementById('manualApiKey').value = '';
+            document.getElementById('apiKeyDisplay').textContent = 'Not retrieved';
+            document.getElementById('apiKeyUsage').textContent = 'Not available';
+            currentApiKey = null;
+            
+            // Also clear quick section
+            clearQuickApiKey();
+            
+            showResult('API key cleared', true);
+        }
+        
+        // Copy API key (in authenticated section)
+        async function copyApiKey() {
+            const apiKey = document.getElementById('apiKeyDisplay').textContent;
+            
+            if (!apiKey || apiKey === 'Not retrieved') {
+                showResult('No API key to copy', false);
+                return;
+            }
+            
+            try {
+                await navigator.clipboard.writeText(apiKey);
+                showResult('API key copied to clipboard!', true);
+            } catch (error) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = apiKey;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showResult('API key copied to clipboard!', true);
+            }
+        }
+
+        // Show result
+        function showResult(message, isSuccess) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${isSuccess ? 'success' : 'error'}`;
+        }
+    </script>
+</body>
+</html>
