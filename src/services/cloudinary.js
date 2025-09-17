@@ -19,15 +19,12 @@ class CloudinaryService {
 
   // Generate secure signature for authenticated requests
   async generateSignature(params, secret) {
-    // Remove undefined/null values and parameters that should NOT be in signature
+    // CRITICAL: Only accept timestamp and folder parameters for signature
+    const allowedParams = ['timestamp', 'folder'];
     const paramsToSign = {};
-    Object.keys(params).forEach(key => {
-      if (params[key] !== undefined && params[key] !== null && 
-          key !== 'api_key' && 
-          key !== 'resource_type' && 
-          key !== 'public_id' && 
-          key !== 'quality' &&
-          key !== 'fetch_format') {
+    
+    allowedParams.forEach(key => {
+      if (params[key] !== undefined && params[key] !== null) {
         paramsToSign[key] = params[key];
       }
     });
@@ -58,26 +55,24 @@ class CloudinaryService {
       // Use timestamp for unique identification
       const timestamp = Math.floor(Date.now() / 1000);
       
-      // Minimal parameters for signature (only timestamp is required)
-      const uploadParams = {
+      // CRITICAL: Only these parameters go into signature calculation
+      const signatureParams = {
         timestamp: timestamp
       };
 
-      // Only add folder if specified
+      // Only add folder to signature if specified
       if (options.folder) {
-        uploadParams.folder = options.folder;
+        signatureParams.folder = options.folder;
       }
 
-      // Generate signature for secure upload (minimal parameters)
-      const signature = await this.generateSignature(uploadParams, this.apiSecret);
+      // Generate signature with ONLY the signature parameters
+      const signature = await this.generateSignature(signatureParams, this.apiSecret);
       
       // Add file first
       formData.append('file', file);
       
-      // Add timestamp (required for signature)
+      // Add signature parameters
       formData.append('timestamp', timestamp);
-      
-      // Add folder if specified
       if (options.folder) {
         formData.append('folder', options.folder);
       }
@@ -86,7 +81,7 @@ class CloudinaryService {
       formData.append('signature', signature);
       formData.append('api_key', this.apiKey);
 
-      // Add optional parameters that don't go in signature
+      // Add all other parameters (NOT in signature)
       if (options.publicId) {
         formData.append('public_id', options.publicId);
       }
@@ -95,7 +90,7 @@ class CloudinaryService {
         formData.append('resource_type', options.resourceType);
       }
 
-      // Add quality optimization
+      // Add quality optimization (NOT in signature)
       if (options.resourceType === 'image') {
         formData.append('quality', 'auto:good');
         formData.append('fetch_format', 'auto');
